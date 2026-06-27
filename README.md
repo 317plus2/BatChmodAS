@@ -1,6 +1,6 @@
 # BatChmodAS
 
-BatChmodAS is an Apple Silicon native macOS permissions utility inspired by BatChmod.
+BatChmodAS has developed a new discontinued BatChmod for Apple Silicon.
 
 ## Features
 
