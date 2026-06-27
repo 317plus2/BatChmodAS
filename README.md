@@ -1,6 +1,6 @@
 # BatChmodAS
 
-BatChmodAS has developed a new discontinued BatChmod for Apple Silicon.
+BatChmodAS has developed a new discontinued BatChmod for Apple Silicon.<br>
 Builded with Codex.
 
 ## Features
