@@ -7,13 +7,13 @@
 "label.everyone" = "Everyone:";
 "label.group" = "Group:";
 "label.owner" = "Owner:";
-"label.settings" = "Settings";
+"label.settings" = "Options";
 "permission.execute" = "Exec";
 "permission.read" = "Read";
 "permission.write" = "Write";
-"toggle.applyRecursively" = "Apply to enclosed files/folders";
+"toggle.applyRecursively" = "Apply to enclosed";
 "toggle.changeOwnershipAndPermissions" = "Change ownership and permissions";
-"toggle.clearACL" = "Clear ACL";
+"toggle.clearACL" = "Clear ACLs";
 "toggle.clearExtendedAttributes" = "Clear extended attributes";
 "toggle.foldersOnly" = "Folders only";
 "toggle.unlock" = "Unlock";
@@ -25,5 +25,7 @@
 "error.chmodFailed" = "chmod failed: %@";
 "error.groupNotFound" = "Group '%@' was not found.";
 "error.invalidOctalMode" = "The octal permission value is invalid. Example: 755";
+"error.noOperationSelected" = "Select at least one operation.";
+"error.reloadPath" = "Load the edited path before applying changes.";
 "error.toolFailed" = "%@ failed.";
 "error.userNotFound" = "User '%@' was not found.";

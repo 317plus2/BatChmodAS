@@ -24,16 +24,16 @@ cd "$ROOT_DIR"
 
 build_app() {
   local configuration="${1:-debug}"
-  local swift_flags=()
+  local build_bin_dir
 
   if [[ "$configuration" == "release" ]]; then
-    swift_flags=(-c release)
+    swift build -c release
+    build_bin_dir="$(swift build -c release --show-bin-path)"
+  else
+    swift build
+    build_bin_dir="$(swift build --show-bin-path)"
   fi
 
-  swift build "${swift_flags[@]}"
-
-  local build_bin_dir
-  build_bin_dir="$(swift build "${swift_flags[@]}" --show-bin-path)"
   local build_binary="$build_bin_dir/$APP_NAME"
 
   rm -rf "$APP_BUNDLE"

@@ -7,11 +7,11 @@
 "label.everyone" = "すべてのユーザ:";
 "label.group" = "グループ:";
 "label.owner" = "オーナー:";
-"label.settings" = "設定";
+"label.settings" = "オプション";
 "permission.execute" = "実行";
 "permission.read" = "読み";
 "permission.write" = "書き";
-"toggle.applyRecursively" = "下層のファイル／フォルダにも適用";
+"toggle.applyRecursively" = "内包している項目に適用";
 "toggle.changeOwnershipAndPermissions" = "所有権とアクセス権を変更";
 "toggle.clearACL" = "ACLを消去";
 "toggle.clearExtendedAttributes" = "拡張属性を消去";
@@ -22,8 +22,10 @@
 "status.loaded" = "読み込みました。";
 "error.adminFailed" = "管理者権限での実行に失敗しました。";
 "error.cannotReadInfo" = "情報を取得できません: %@";
-"error.chmodFailed" = "chmod に失敗しました: %@";
+"error.chmodFailed" = "chmodに失敗しました: %@";
 "error.groupNotFound" = "グループ '%@' が見つかりません。";
 "error.invalidOctalMode" = "8進表記の権限が正しくありません。例: 755";
+"error.noOperationSelected" = "実行する操作を1つ以上選択してください。";
+"error.reloadPath" = "変更したパスを読み込んでから適用してください。";
 "error.toolFailed" = "%@ に失敗しました。";
 "error.userNotFound" = "ユーザ '%@' が見つかりません。";
