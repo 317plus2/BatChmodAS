@@ -3,7 +3,7 @@ set -euo pipefail
 
 MODE="${1:-run}"
 APP_NAME="BatChmodAS"
-BUNDLE_ID="local.codex.BatChmodAS"
+BUNDLE_ID="net.317plus2.BatChmodAS"
 APP_VERSION="1.0"
 APP_BUILD="1"
 MIN_SYSTEM_VERSION="14.0"
