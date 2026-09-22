@@ -3,76 +3,89 @@ import AppKit
 import UniformTypeIdentifiers
 
 struct ContentView: View {
-    @Environment(\.colorScheme) private var colorScheme
     @StateObject private var model = PermissionViewModel()
     @State private var isDropTargeted = false
 
     var body: some View {
-        Group {
-            if #available(macOS 26.0, *) {
-                GlassEffectContainer(spacing: 16) {
-                    content
-                }
-            } else {
-                content
+        content
+            .padding(20)
+            .frame(width: 508)
+            .background(Color(nsColor: .windowBackgroundColor))
+            .overlay(dropHighlight)
+            .onDrop(of: [UTType.fileURL.identifier], isTargeted: $isDropTargeted, perform: handleDrop)
+            .font(.system(size: 13))
+            .alert(Text(L10n.string("alert.error.title")), isPresented: $model.isShowingError) {
+                Button(L10n.string("button.ok"), role: .cancel) { }
+            } message: {
+                Text(model.errorMessage)
             }
-        }
-        .padding(20)
-        .frame(width: 560, height: 500)
-        .background(ambientBackground)
-        .overlay(dropHighlight)
-        .onDrop(of: [UTType.fileURL.identifier], isTargeted: $isDropTargeted, perform: handleDrop)
-        .font(.system(size: 13))
-        .alert(Text(L10n.string("alert.error.title")), isPresented: $model.isShowingError) {
-            Button(L10n.string("button.ok"), role: .cancel) { }
-        } message: {
-            Text(model.errorMessage)
-        }
     }
 
     private var content: some View {
-        VStack(spacing: 16) {
+        VStack(alignment: .leading, spacing: 18) {
             targetPanel
-            permissionsPanel
-            optionsPanel
+
+            VStack(alignment: .leading, spacing: 6) {
+                sectionHeading("label.permissions")
+                permissionsPanel
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
+                sectionHeading("label.settings")
+                optionsPanel
+            }
+
+            recursionOptions
             actionBar
         }
     }
 
     private var targetPanel: some View {
         HStack(spacing: 12) {
-            Image(systemName: model.isDirectory ? "folder.fill" : "doc.fill")
-                .font(.system(size: 22, weight: .medium))
-                .foregroundStyle(.tint)
-                .frame(width: 34)
+            Image(systemName: model.isDirectory ? "folder" : "doc")
+                .font(.system(size: 24, weight: .regular))
+                .foregroundStyle(.secondary)
+                .frame(width: 32)
+                .accessibilityHidden(true)
 
-            TextField(L10n.string("status.chooseItem"), text: $model.path)
-                .textFieldStyle(.roundedBorder)
-                .controlSize(.large)
-                .onSubmit { model.loadPath() }
+            VStack(alignment: .leading, spacing: 4) {
+                Text(model.path.isEmpty
+                     ? L10n.string("status.chooseItem")
+                     : URL(fileURLWithPath: model.path).lastPathComponent)
+                    .font(.headline)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                    .help(model.path)
 
-            Button {
-                model.chooseItem()
-            } label: {
-                Label(L10n.string("button.file"), systemImage: "folder.badge.plus")
+                TextField(L10n.string("placeholder.path"), text: $model.path)
+                    .textFieldStyle(.plain)
+                    .font(.system(size: 12))
+                    .foregroundStyle(.secondary)
+                    .accessibilityLabel(L10n.string("label.path"))
+                    .help(L10n.string("placeholder.path"))
+                    .onSubmit { model.loadPath() }
             }
-            .adaptiveGlassButton()
-            .controlSize(.large)
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            Button(L10n.string(model.hasSelection ? "button.change" : "button.file")) {
+                model.chooseItem()
+            }
+            .buttonStyle(.bordered)
+            .fixedSize()
         }
-        .padding(16)
-        .adaptiveGlassPanel()
+        .frame(minHeight: 48)
+    }
+
+    private func sectionHeading(_ key: String) -> some View {
+        Text(L10n.string(key))
+            .font(.system(size: 12))
+            .foregroundStyle(.secondary)
+            .padding(.leading, 4)
     }
 
     private var permissionsPanel: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Toggle(isOn: $model.changeOwnershipAndPermissions) {
-                Label(
-                    L10n.string("toggle.changeOwnershipAndPermissions"),
-                    systemImage: "person.2.badge.gearshape"
-                )
-                .font(.headline)
-            }
-            .toggleStyle(.switch)
+            settingToggle("toggle.changeOwnershipAndPermissions", isOn: $model.changeOwnershipAndPermissions)
 
             Divider()
 
@@ -85,11 +98,9 @@ struct ContentView: View {
                     write: $model.ownerWrite,
                     execute: $model.ownerExecute,
                     showsNameField: true,
-                    isEnabled: model.hasSelection,
+                    isEnabled: model.hasSelection && model.changeOwnershipAndPermissions,
                     onChange: model.updateOctalFromBits
                 )
-
-                Divider()
 
                 PermissionColumn(
                     title: L10n.string("label.group"),
@@ -99,11 +110,9 @@ struct ContentView: View {
                     write: $model.groupWrite,
                     execute: $model.groupExecute,
                     showsNameField: true,
-                    isEnabled: model.hasSelection,
+                    isEnabled: model.hasSelection && model.changeOwnershipAndPermissions,
                     onChange: model.updateOctalFromBits
                 )
-
-                Divider()
 
                 PermissionColumn(
                     title: L10n.string("label.everyone"),
@@ -113,66 +122,60 @@ struct ContentView: View {
                     write: $model.otherWrite,
                     execute: $model.otherExecute,
                     showsNameField: false,
-                    isEnabled: model.hasSelection,
+                    isEnabled: model.hasSelection && model.changeOwnershipAndPermissions,
                     onChange: model.updateOctalFromBits
                 )
             }
-            .disabled(!model.changeOwnershipAndPermissions)
         }
-        .padding(18)
-        .adaptiveGlassPanel()
+        .padding(14)
+        .settingsPanel()
     }
 
     private var optionsPanel: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Label(L10n.string("label.settings"), systemImage: "slider.horizontal.3")
-                .font(.headline)
-
-            Grid(alignment: .leading, horizontalSpacing: 28, verticalSpacing: 12) {
-                GridRow {
-                    Toggle(isOn: $model.clearACL) {
-                        Label(L10n.string("toggle.clearACL"), systemImage: "list.bullet.rectangle")
-                    }
-
-                    Toggle(isOn: $model.unlock) {
-                        Label(L10n.string("toggle.unlock"), systemImage: "lock.open")
-                    }
-                }
-
-                GridRow {
-                    Toggle(isOn: $model.clearExtendedAttributes) {
-                        Label(L10n.string("toggle.clearExtendedAttributes"), systemImage: "tag.slash")
-                    }
-
-                    Color.clear
-                }
-            }
-            .toggleStyle(.switch)
-
+        VStack(spacing: 10) {
+            settingToggle("toggle.clearACL", isOn: $model.clearACL)
             Divider()
+            settingToggle("toggle.clearExtendedAttributes", isOn: $model.clearExtendedAttributes)
+            Divider()
+            settingToggle("toggle.unlock", isOn: $model.unlock)
+        }
+        .padding(14)
+        .settingsPanel()
+    }
 
-            HStack(spacing: 24) {
-                Toggle(isOn: $model.applyRecursively) {
-                    Label(L10n.string("toggle.applyRecursively"), systemImage: "arrow.triangle.branch")
-                }
+    private var recursionOptions: some View {
+        HStack(spacing: 24) {
+            Toggle(L10n.string("toggle.applyRecursively"), isOn: $model.applyRecursively)
                 .disabled(!model.isDirectory)
 
-                Toggle(isOn: $model.foldersOnly) {
-                    Text(L10n.string("toggle.foldersOnly"))
-                }
+            Toggle(L10n.string("toggle.foldersOnly"), isOn: $model.foldersOnly)
                 .disabled(!model.isDirectory || !model.applyRecursively)
-            }
-            .toggleStyle(.checkbox)
         }
-        .padding(18)
-        .adaptiveGlassPanel()
+        .toggleStyle(.checkbox)
+        .font(.system(size: 12))
+        .padding(.horizontal, 4)
+    }
+
+    private func settingToggle(_ key: String, isOn: Binding<Bool>) -> some View {
+        HStack(spacing: 12) {
+            Text(L10n.string(key))
+            Spacer(minLength: 12)
+            Toggle(L10n.string(key), isOn: isOn)
+                .labelsHidden()
+                .toggleStyle(.switch)
+                .controlSize(.small)
+                .fixedSize()
+        }
+        .frame(minHeight: 24)
     }
 
     private var actionBar: some View {
         HStack(spacing: 12) {
             Label(model.status, systemImage: model.statusIsError ? "exclamationmark.triangle.fill" : "info.circle")
                 .foregroundStyle(model.statusIsError ? AnyShapeStyle(.red) : AnyShapeStyle(.secondary))
+                .font(.system(size: 12))
                 .lineLimit(1)
+                .help(model.status)
 
             Spacer()
 
@@ -180,30 +183,15 @@ struct ContentView: View {
                 model.applyChanges()
             } label: {
                 Label(L10n.string("button.apply"), systemImage: "checkmark")
+                    .frame(width: 70)
             }
             .keyboardShortcut(.defaultAction)
-            .adaptiveGlassButton(prominent: true)
+            .buttonStyle(.borderedProminent)
             .controlSize(.large)
             .disabled(!model.canApply)
         }
         .padding(.horizontal, 4)
-    }
-
-    private var ambientBackground: some View {
-        ZStack {
-            Color(nsColor: .windowBackgroundColor)
-
-            LinearGradient(
-                colors: [
-                    Color.accentColor.opacity(colorScheme == .dark ? 0.20 : 0.10),
-                    Color.clear,
-                    Color.primary.opacity(colorScheme == .dark ? 0.05 : 0.02)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        }
-        .ignoresSafeArea()
+        .frame(minHeight: 28)
     }
 
     @ViewBuilder
@@ -243,12 +231,15 @@ private struct PermissionColumn: View {
     let onChange: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 8) {
             Text(title)
-                .font(.subheadline.weight(.semibold))
+                .font(.system(size: 12))
 
             if showsNameField {
-                Picker("", selection: $name) {
+                Picker(title, selection: $name) {
+                    if !options.contains(name) {
+                        Text(name).tag(name)
+                    }
                     ForEach(options, id: \.self) { option in
                         Text(option)
                             .tag(option)
@@ -257,12 +248,15 @@ private struct PermissionColumn: View {
                 .pickerStyle(.menu)
                 .controlSize(.regular)
                 .labelsHidden()
+                .frame(maxWidth: .infinity)
+                .frame(height: 24)
+                .disabled(!isEnabled)
             } else {
                 Color.clear
                     .frame(height: 24)
             }
 
-            HStack(spacing: 14) {
+            HStack(spacing: 12) {
                 permissionToggle(L10n.string("permission.read"), isOn: $read)
                 permissionToggle(L10n.string("permission.write"), isOn: $write)
                 permissionToggle(L10n.string("permission.execute"), isOn: $execute)
@@ -272,67 +266,28 @@ private struct PermissionColumn: View {
         .onChange(of: read) { _, _ in onChange() }
         .onChange(of: write) { _, _ in onChange() }
         .onChange(of: execute) { _, _ in onChange() }
-        .disabled(!isEnabled)
     }
 
     private func permissionToggle(_ title: String, isOn: Binding<Bool>) -> some View {
         VStack(spacing: 6) {
             Text(title)
-                .font(.caption.weight(.medium))
-                .foregroundStyle(.secondary)
+                .font(.system(size: 12))
 
-            Toggle("", isOn: isOn)
+            Toggle(title, isOn: isOn)
                 .toggleStyle(.checkbox)
                 .labelsHidden()
+                .disabled(!isEnabled)
         }
     }
 }
 
 private extension View {
-    func adaptiveGlassPanel() -> some View {
-        modifier(AdaptiveGlassPanelModifier())
-    }
-
-    func adaptiveGlassButton(prominent: Bool = false) -> some View {
-        modifier(AdaptiveGlassButtonModifier(prominent: prominent))
-    }
-}
-
-private struct AdaptiveGlassPanelModifier: ViewModifier {
-    @Environment(\.colorScheme) private var colorScheme
-
-    @ViewBuilder
-    func body(content: Content) -> some View {
-        if #available(macOS 26.0, *) {
-            content
-                .glassEffect(.regular, in: .rect(cornerRadius: 20))
-        } else {
-            content
-                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .stroke(.separator.opacity(colorScheme == .dark ? 0.55 : 0.35), lineWidth: 0.5)
-                }
-        }
-    }
-}
-
-private struct AdaptiveGlassButtonModifier: ViewModifier {
-    let prominent: Bool
-
-    @ViewBuilder
-    func body(content: Content) -> some View {
-        if #available(macOS 26.0, *) {
-            if prominent {
-                content.buttonStyle(.glassProminent)
-            } else {
-                content.buttonStyle(.glass)
+    func settingsPanel() -> some View {
+        background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 8))
+            .overlay {
+                RoundedRectangle(cornerRadius: 8)
+                    .strokeBorder(Color(nsColor: .separatorColor).opacity(0.5), lineWidth: 0.5)
             }
-        } else if prominent {
-            content.buttonStyle(.borderedProminent)
-        } else {
-            content.buttonStyle(.bordered)
-        }
     }
 }
 

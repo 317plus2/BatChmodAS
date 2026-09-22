@@ -3,9 +3,10 @@ set -euo pipefail
 
 MODE="${1:-run}"
 APP_NAME="BatChmodAS"
-BUNDLE_ID="local.codex.BatChmodAS"
+BUNDLE_ID="net.317plus2.BatChmodAS"
 APP_VERSION="1.0"
 APP_BUILD="1"
+APP_COPYRIGHT="© 2026 317plus2. All rights reserved."
 MIN_SYSTEM_VERSION="14.0"
 ICON_FILE="BatChmod.icns"
 
@@ -70,6 +71,8 @@ build_app() {
   <string>$APP_VERSION</string>
   <key>CFBundleVersion</key>
   <string>$APP_BUILD</string>
+  <key>NSHumanReadableCopyright</key>
+  <string>$APP_COPYRIGHT</string>
   <key>LSMinimumSystemVersion</key>
   <string>$MIN_SYSTEM_VERSION</string>
   <key>NSHighResolutionCapable</key>
