@@ -12,8 +12,6 @@ Builded with Codex.
 - Read, write, and execute permission editing
 - Recursive permission application for folders
 - English and Japanese localization
-- Custom app icon
-- Release app bundle generation
 
 ## Requirements
 
